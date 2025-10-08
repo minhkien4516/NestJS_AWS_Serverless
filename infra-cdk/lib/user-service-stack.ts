@@ -4,6 +4,8 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as sns from 'aws-cdk-lib/aws-sns';
 
 export class UserServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -56,13 +58,21 @@ export class UserServiceStack extends cdk.Stack {
     // });
     const api = apigateway.RestApi.fromRestApiId(
       this,
-      'user-service-api',
+      'UserServiceApi',
       't3j5w08opi'
     );
 
-    // Permissions
-    // usersTable.grantReadWriteData(userLambda);
-    // fileBucket.grantReadWrite(userLambda);
+    const userPool = cognito.UserPool.fromUserPoolId(
+      this,
+      'UserPoolRxps2v',
+      'ap-southeast-1_sDCnWUehQ'
+    );
+
+    const notificationTopic = sns.Topic.fromTopicArn(
+      this,
+      'UserNotifications',
+      'arn:aws:sns:ap-southeast-1:438465128644:user-notifications'
+    );
 
     new cdk.CfnOutput(this, 'LambdaFunctionArn', {
       value: userLambda.functionArn,
@@ -82,6 +92,16 @@ export class UserServiceStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'S3Bucket', {
       value: fileBucket.bucketName,
       description: 'Imported existing S3 bucket name',
+    });
+
+    new cdk.CfnOutput(this, 'CognitoUserPoolId', {
+      value: userPool.userPoolId,
+      description: 'Imported existing Cognito User Pool ID',
+    });
+
+    new cdk.CfnOutput(this, 'SnsTopicArn', {
+      value: notificationTopic.topicArn,
+      description: 'Imported existing SNS Topic ARN',
     });
   }
 }
