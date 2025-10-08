@@ -24,13 +24,16 @@ jobs:
         with:
           node-version: 18
 
-      - name: Build backend service
+      - name: Build backend Lambda
         working-directory: backend-app
         run: |
           npm ci
           npm run build
-          cd ..
-          zip -r $ZIP_FILE_NAME backend-app/dist backend-app/package.json backend-app/node_modules
+      - name: Package Lambda function
+        working-directory: backend-app/dist
+        run: |
+          zip -r ../../${ZIP_FILE_NAME} .
+        shell: bash
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -48,7 +51,7 @@ jobs:
             --s3-bucket $LAMBDA_S3_BUCKET \
             --s3-key $ZIP_FILE_NAME
           echo "---> Lambda function '$LAMBDA_FUNCTION_NAME' code updated successfully"
-      - name: Install AWS CDK CLI
+      - name: Install AWS CDK
         run: npm install -g aws-cdk
       - name: Install CDK dependencies
         working-directory: infra-cdk
@@ -58,23 +61,10 @@ jobs:
         run: cdk bootstrap aws://$AWS_ACCOUNT_ID/$AWS_REGION
         env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      - name: Package and Upload Lambda code
-        run: |
-          cd backend-app
-          npm install
-          npm run build
-          zip -r $ZIP_FILE_NAME dist node_modules package.json
-          aws s3 cp $ZIP_FILE_NAME s3://$LAMBDA_S3_BUCKET/$ZIP_FILE_NAME
-          aws lambda update-function-code \
-            --function-name $LAMBDA_FUNCTION_NAME \
-            --s3-bucket $LAMBDA_S3_BUCKET \
-            --s3-key $ZIP_FILE_NAME
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-southeast-1
       - name: Deploy CDK Stack
         working-directory: infra-cdk
         run: |
           cdk synth
           cdk deploy --all --require-approval never
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}

@@ -17,12 +17,6 @@ export class UserServiceStack extends cdk.Stack {
       'UsersTable',
       'Users'
     );
-    // const usersTable = new dynamodb.Table(this, 'UsersTable', {
-    //   tableName: 'Users',
-    //   partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
-    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
-    // });
 
     // S3 Bucket
     const fileBucket = s3.Bucket.fromBucketName(
@@ -32,18 +26,6 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // Lambda Function
-    // const userLambda = new lambda.Function(this, 'UserServiceLambda', {
-    //   functionName: 'backend-app-func',
-    //   runtime: lambda.Runtime.NODEJS_18_X,
-    //   handler: 'main.handler',
-    //   code: lambda.Code.fromAsset('../backend-app/dist'),
-    //   environment: {
-    //     USERS_TABLE: usersTable.tableName,
-    //     FILE_BUCKET: fileBucket.bucketName,
-    //   },
-    //   timeout: cdk.Duration.seconds(30),
-    //   memorySize: 512,
-    // });
     const userLambda = lambda.Function.fromFunctionArn(
       this,
       'UserServiceLambda',
@@ -51,23 +33,20 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // API Gateway
-    // const api = new apigateway.LambdaRestApi(this, 'UserApi', {
-    //   handler: userLambda,
-    //   proxy: true,
-    //   restApiName: 'User Service API',
-    // });
     const api = apigateway.RestApi.fromRestApiId(
       this,
       'UserServiceApi',
       't3j5w08opi'
     );
 
+    // Cognito
     const userPool = cognito.UserPool.fromUserPoolId(
       this,
       'UserPoolRxps2v',
       'ap-southeast-1_sDCnWUehQ'
     );
 
+    // SNS
     const notificationTopic = sns.Topic.fromTopicArn(
       this,
       'UserNotifications',
