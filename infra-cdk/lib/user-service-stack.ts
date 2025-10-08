@@ -1,0 +1,87 @@
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+
+export class UserServiceStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    // DynamoDB
+    const usersTable = dynamodb.Table.fromTableName(
+      this,
+      'UsersTable',
+      'Users'
+    );
+    // const usersTable = new dynamodb.Table(this, 'UsersTable', {
+    //   tableName: 'Users',
+    //   partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
+    // });
+
+    // S3 Bucket
+    const fileBucket = s3.Bucket.fromBucketName(
+      this,
+      'UserBucket',
+      'lambda-function-bucket-kienmai'
+    );
+
+    // Lambda Function
+    // const userLambda = new lambda.Function(this, 'UserServiceLambda', {
+    //   functionName: 'backend-app-func',
+    //   runtime: lambda.Runtime.NODEJS_18_X,
+    //   handler: 'main.handler',
+    //   code: lambda.Code.fromAsset('../backend-app/dist'),
+    //   environment: {
+    //     USERS_TABLE: usersTable.tableName,
+    //     FILE_BUCKET: fileBucket.bucketName,
+    //   },
+    //   timeout: cdk.Duration.seconds(30),
+    //   memorySize: 512,
+    // });
+    const userLambda = lambda.Function.fromFunctionArn(
+      this,
+      'UserServiceLambda',
+      'arn:aws:lambda:ap-southeast-1:438465128644:function:backend-app-func'
+    );
+
+    // API Gateway
+    // const api = new apigateway.LambdaRestApi(this, 'UserApi', {
+    //   handler: userLambda,
+    //   proxy: true,
+    //   restApiName: 'User Service API',
+    // });
+    const api = apigateway.RestApi.fromRestApiId(
+      this,
+      'user-service-api',
+      't3j5w08opi'
+    );
+
+    // Permissions
+    // usersTable.grantReadWriteData(userLambda);
+    // fileBucket.grantReadWrite(userLambda);
+
+    new cdk.CfnOutput(this, 'LambdaFunctionArn', {
+      value: userLambda.functionArn,
+      description: 'Imported existing Lambda function ARN',
+    });
+
+    new cdk.CfnOutput(this, 'ApiGatewayId', {
+      value: api.restApiId,
+      description: 'Imported existing API Gateway ID',
+    });
+
+    new cdk.CfnOutput(this, 'DynamoDBTable', {
+      value: usersTable.tableName,
+      description: 'Imported existing DynamoDB table name',
+    });
+
+    new cdk.CfnOutput(this, 'S3Bucket', {
+      value: fileBucket.bucketName,
+      description: 'Imported existing S3 bucket name',
+    });
+  }
+}
