@@ -10,7 +10,9 @@ async function bootstrap(): Promise<Handler> {
   if (!server) {
     const expressApp = express();
     const adapter = new ExpressAdapter(expressApp);
-    const app = await NestFactory.create(AppModule, adapter);
+    const app = await NestFactory.create(AppModule, adapter, {
+      logger: ['error', 'warn', 'log'],
+    });
     app.enableCors();
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));

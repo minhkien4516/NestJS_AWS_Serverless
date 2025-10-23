@@ -1,5 +1,10 @@
 import { ConfigService } from '@nestjs/config';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+  UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb';
 import {
   BatchWriteCommand,
   DeleteCommand,
@@ -177,5 +182,44 @@ export class DynamoService {
       this.logger.error('transactWrite error', err);
       throw err;
     }
+  }
+
+  // Translation
+  async saveResult(jobId: string, payload: any) {
+    await this.docClient.send(
+      new PutItemCommand({
+        TableName: this.configService.get<string>('TRANSLATION_TABLE'),
+        Item: {
+          jobId: { S: jobId },
+          result: { S: JSON.stringify(payload) },
+          status: { S: 'COMPLETED' },
+          createdAt: { S: new Date().toISOString() },
+        },
+      }),
+    );
+  }
+
+  async getResult(jobId: string) {
+    const res = await this.docClient.send(
+      new GetItemCommand({
+        TableName: this.configService.get<string>('TRANSLATION_TABLE'),
+        Key: { jobId: { S: jobId } },
+      }),
+    );
+    return res.Item ? JSON.parse(res.Item.result.S!) : null;
+  }
+
+  async updateJobResult(jobId: string, status: string, error?: string) {
+    const params = {
+      TableName: this.configService.get<string>('TRANSLATION_TABLE'),
+      Key: { jobId: { S: jobId } },
+      UpdateExpression: 'SET #s = :s, #err = :e',
+      ExpressionAttributeNames: { '#s': 'status', '#err': 'error' },
+      ExpressionAttributeValues: {
+        ':s': { S: status },
+        ':e': { S: error || '' },
+      },
+    };
+    await this.client.send(new UpdateItemCommand(params));
   }
 }
