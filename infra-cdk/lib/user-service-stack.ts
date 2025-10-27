@@ -88,12 +88,12 @@ export class UserServiceStack extends cdk.Stack {
     //   timeout: cdk.Duration.seconds(60),
     // });
 
-    workerLambda.addEventSource(
-      new lambdaEventSources.SqsEventSource(translationQueue, {
-        batchSize: 5,
-        enabled: true,
-      })
-    );
+    // workerLambda.addEventSource(
+    //   new lambdaEventSources.SqsEventSource(translationQueue, {
+    //     batchSize: 5,
+    //     enabled: true,
+    //   })
+    // );
 
     // translationQueue.grantConsumeMessages(workerLambda);
     // translateTable.grantReadWriteData(workerLambda);
