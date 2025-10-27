@@ -9,7 +9,7 @@ const bedrock = new BedrockService(configService);
 const dynamo = new DynamoService(configService);
 const logger = new Logger('TranslationWorker');
 
-export const handler = async (event: SQSEvent) => {
+export const handler = async (event: SQSEvent): Promise<void> => {
   logger.warn(`We have been received ${event.Records.length} records from SQS`);
   for (const record of event.Records) {
     try {
@@ -42,6 +42,8 @@ export const handler = async (event: SQSEvent) => {
         itemPath: request.itemPath,
         timestamp: new Date().toISOString(),
       });
+
+      console.log('Successfully processed message:', payload.jobId);
     } catch (err) {
       console.error('Worker error', err);
       throw err;

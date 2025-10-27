@@ -6,6 +6,8 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as sns from 'aws-cdk-lib/aws-sns';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class UserServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -16,6 +18,13 @@ export class UserServiceStack extends cdk.Stack {
       this,
       'UsersTable',
       'Users'
+    );
+
+    // DynamoDB
+    const translateTable = dynamodb.Table.fromTableName(
+      this,
+      'TranslationsTable',
+      'Translations'
     );
 
     // S3 Bucket
@@ -30,6 +39,13 @@ export class UserServiceStack extends cdk.Stack {
       this,
       'UserServiceLambda',
       'arn:aws:lambda:ap-southeast-1:438465128644:function:backend-app-func'
+    );
+
+    // Worker Lambda Function
+    const workerLambda = lambda.Function.fromFunctionArn(
+      this,
+      'TranslationWorkerLambda',
+      'arn:aws:lambda:ap-southeast-1:438465128644:function:UserServiceStack-WorkerLambdaBD11C0E2-6CEhvO6x65eO'
     );
 
     // API Gateway
@@ -53,6 +69,36 @@ export class UserServiceStack extends cdk.Stack {
       'arn:aws:sns:ap-southeast-1:438465128644:user-notifications'
     );
 
+    // SQS
+    const translationQueue = sqs.Queue.fromQueueArn(
+      this,
+      'translationQueue',
+      'arn:aws:sqs:ap-southeast-1:438465128644:translationQueue'
+    );
+
+    // worker lambda
+    // const workerLambda = new lambda.Function(this, 'WorkerLambda', {
+    //   runtime: lambda.Runtime.NODEJS_20_X,
+    //   handler: 'backend-app/src/worker/handler.handler',
+    //   code: lambda.Code.fromAsset('../backend-app/dist'),
+    //   environment: {
+    //     TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
+    //     DYNAMODB_TABLE_NAME: translateTable.tableName,
+    //   },
+    //   timeout: cdk.Duration.seconds(60),
+    // });
+
+    workerLambda.addEventSource(
+      new lambdaEventSources.SqsEventSource(translationQueue, {
+        batchSize: 5,
+        enabled: true,
+      })
+    );
+
+    translationQueue.grantConsumeMessages(workerLambda);
+    translateTable.grantReadWriteData(workerLambda);
+
+    // Outputs
     new cdk.CfnOutput(this, 'LambdaFunctionArn', {
       value: userLambda.functionArn,
       description: 'Imported existing Lambda function ARN',
@@ -81,6 +127,16 @@ export class UserServiceStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'SnsTopicArn', {
       value: notificationTopic.topicArn,
       description: 'Imported existing SNS Topic ARN',
+    });
+
+    new cdk.CfnOutput(this, 'WorkerLambdaArn', {
+      value: workerLambda.functionArn,
+      description: 'Worker Lambda function ARN',
+    });
+
+    new cdk.CfnOutput(this, 'TranslationQueueUrl', {
+      value: translationQueue.queueUrl,
+      description: 'SQS Translation Queue URL',
     });
   }
 }
