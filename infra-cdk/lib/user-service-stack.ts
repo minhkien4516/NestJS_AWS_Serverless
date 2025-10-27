@@ -95,8 +95,8 @@ export class UserServiceStack extends cdk.Stack {
       })
     );
 
-    translationQueue.grantConsumeMessages(workerLambda);
-    translateTable.grantReadWriteData(workerLambda);
+    // translationQueue.grantConsumeMessages(workerLambda);
+    // translateTable.grantReadWriteData(workerLambda);
 
     // Outputs
     new cdk.CfnOutput(this, 'LambdaFunctionArn', {
