@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { BedrockService } from '../bedrock/bedrock.service';
 import { TranslateRequestDTO } from './dto/translate-request.dto';
 import { randomUUID } from 'crypto';
@@ -14,6 +14,7 @@ export class TranslateService {
     private readonly configService: ConfigService,
     private readonly bedrockClient: BedrockService,
     private readonly dynamoDB: DynamoService,
+    private readonly logger = new Logger(TranslateService.name),
   ) {}
 
   async handleTranslation(
@@ -87,6 +88,15 @@ export class TranslateService {
 
       results.push({ metadata: fields[0].metadata, translations });
     }
+    await this.dynamoDB.saveResult(itemId, {
+      itemId,
+      results,
+      sourceLanguage: language,
+      targetLanguages,
+      requestedBy: request.UserRequestedTranslation,
+      itemPath: request.itemPath,
+      timestamp: new Date().toISOString(),
+    });
     return {
       itemId,
       itemPath,
@@ -107,6 +117,9 @@ export class TranslateService {
         QueueUrl: this.configService.get<string>('TRANSLATION_QUEUE_URL'),
         MessageBody: JSON.stringify(payload),
       }),
+    );
+    this.logger.warn(
+      `We have been sent ${jobId} to SQS with URL: ${this.configService.get<string>('TRANSLATION_QUEUE_URL')}`,
     );
     return jobId;
   }

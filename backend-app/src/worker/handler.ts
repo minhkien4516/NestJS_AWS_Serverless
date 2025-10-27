@@ -2,14 +2,18 @@ import { SQSEvent } from 'aws-lambda';
 import { DynamoService } from '../database/dynamo.service';
 import { BedrockService } from '../bedrock/bedrock.service';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 
 const configService = new ConfigService();
 const bedrock = new BedrockService(configService);
 const dynamo = new DynamoService(configService);
+const logger = new Logger('TranslationWorker');
 
 export const handler = async (event: SQSEvent) => {
+  logger.warn(`We have been received ${event.Records.length} records from SQS`);
   for (const record of event.Records) {
     try {
+      logger.warn(`We have been received ${record.body} from SQS`);
       const payload = JSON.parse(record.body);
       const { jobId, request } = payload;
       const { fields, targetLanguages, language } = request;
