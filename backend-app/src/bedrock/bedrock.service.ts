@@ -39,8 +39,8 @@ export class BedrockService {
     const command = new InvokeModelCommand({
       modelId:
         this.configService.get<string>('BEDROCK_MODEL_ARN') ||
-        // 'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
-        'arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+      // 'arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
@@ -85,8 +85,8 @@ export class BedrockService {
     const command = new InvokeModelCommand({
       modelId:
         this.configService.get<string>('BEDROCK_MODEL_ARN') ||
-        // 'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
-        'arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+      // 'arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
