@@ -6,6 +6,11 @@ import { TranslateRequestDTO } from './dto/translate-request.dto';
 export class TranslateController {
   constructor(private readonly translateService: TranslateService) {}
 
+  @Post('/retry')
+  async translateWithBackoff(@Body() request: TranslateRequestDTO) {
+    return await this.translateService.handleTranslationBackoff(request);
+  }
+
   @Post()
   async translate(@Body() request: TranslateRequestDTO) {
     const jobId = await this.translateService.enqueueTranslation(request);

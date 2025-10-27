@@ -39,13 +39,14 @@ export class BedrockService {
     const command = new InvokeModelCommand({
       modelId:
         this.configService.get<string>('BEDROCK_MODEL_ARN') ||
-        'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-3-sonnet-20240229-v1:0',
+        // 'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
-        anthropic_version: 'bedrock-2025-09-31',
+        anthropic_version: 'bedrock-2023-05-31',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1000,
+        max_tokens: 1024,
       }),
     });
 
@@ -62,46 +63,82 @@ export class BedrockService {
     return String(translated).trim();
   }
 
-  // async callWithBackoff(
-  //   command: InvokeModelCommand,
-  //   targetLanguage: string,
-  //   retries = 5,
-  //   delay = 1000,
-  // ): Promise<string> {
-  //   try {
-  //     const response = await this.client.send(command);
-  //     const decoded = new TextDecoder().decode(response.body);
-  //     const output = JSON.parse(decoded);
+  async translateWithRetry(
+    text: string,
+    targetLanguage: string,
+    sourceLanguage: string,
+  ): Promise<string> {
+    const prompt = [
+      {
+        type: 'text',
+        text: `
+    You are a professional translator.
+    Translate the following text from ${sourceLanguage} to ${targetLanguage}.
+    Return only the translated text.
 
-  //     const translated = output?.content?.[0]?.text?.trim() || '';
-  //     this.logger.log(`Translation (${targetLanguage}) success`);
-  //     return translated;
-  //   } catch (error) {
-  //     const statusCode = error?.$metadata?.httpStatusCode;
-  //     const requestId = error?.$metadata?.requestId;
+    Text: 
+    ${text}
+    `,
+      },
+    ];
 
-  //     // Handle throttling with exponential backoff
-  //     if (
-  //       (error.name === 'ThrottlingException' || statusCode === 429) &&
-  //       retries > 0
-  //     ) {
-  //       this.logger.warn(
-  //         `Throttled on ${targetLanguage}. Retrying in ${delay}ms (RequestId: ${requestId}, statusCode: ${statusCode})`,
-  //       );
-  //       await new Promise((resolve) => setTimeout(resolve, delay));
-  //       return this.callWithBackoff(
-  //         command,
-  //         targetLanguage,
-  //         retries - 1,
-  //         delay * 2,
-  //       );
-  //     }
+    const command = new InvokeModelCommand({
+      modelId:
+        this.configService.get<string>('BEDROCK_MODEL_ARN') ||
+        // 'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+        'arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1024,
+      }),
+    });
 
-  //     // Log error details
-  //     this.logger.error(
-  //       `❌ Error translating (${targetLanguage}) [${requestId || 'no-id'}]: ${error.message}`,
-  //     );
-  //     throw new Error(`Translation failed for ${targetLanguage}`);
-  //   }
-  // }
+    return await this.callWithBackoff(command, targetLanguage);
+  }
+
+  async callWithBackoff(
+    command: InvokeModelCommand,
+    targetLanguage: string,
+    retries = 5,
+    delay = 1000,
+  ): Promise<string> {
+    try {
+      const response = await this.client.send(command);
+      const decoded = new TextDecoder().decode(response.body);
+      const output = JSON.parse(decoded);
+
+      const translated = output?.content?.[0]?.text?.trim() || '';
+      this.logger.log(`Translation (${targetLanguage}) success`);
+      return translated;
+    } catch (error) {
+      const statusCode = error?.$metadata?.httpStatusCode;
+      const requestId = error?.$metadata?.requestId;
+
+      // Handle throttling with exponential backoff
+      if (
+        (error.name === 'ThrottlingException' || statusCode === 429) &&
+        retries > 0
+      ) {
+        this.logger.warn(
+          `Throttled on ${targetLanguage}. Retrying in ${delay}ms (RequestId: ${requestId}, statusCode: ${statusCode})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.callWithBackoff(
+          command,
+          targetLanguage,
+          retries - 1,
+          delay * 2,
+        );
+      }
+
+      // Log error details
+      this.logger.error(
+        `❌ Error translating (${targetLanguage}) [${requestId || 'no-id'}]: ${error.message}`,
+      );
+      throw new Error(`Translation failed for ${targetLanguage}`);
+    }
+  }
 }

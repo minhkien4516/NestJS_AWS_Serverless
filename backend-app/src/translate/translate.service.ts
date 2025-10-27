@@ -1,11 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { BedrockService } from '../bedrock/bedrock.service';
 import { TranslateRequestDTO } from './dto/translate-request.dto';
-// import { TranslateResponseDTO } from './dto/translate-response.dto';
 import { randomUUID } from 'crypto';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { ConfigService } from '@nestjs/config';
 import { DynamoService } from '../database/dynamo.service';
+import { TranslateResponseDTO } from './dto/translate-response.dto';
 
 @Injectable()
 export class TranslateService {
@@ -16,46 +16,87 @@ export class TranslateService {
     private readonly dynamoDB: DynamoService,
   ) {}
 
-  // async handleTranslation(
-  //   request: TranslateRequestDTO,
-  // ): Promise<TranslateResponseDTO> {
-  //   const {
-  //     targetLanguages,
-  //     language,
-  //     fields,
-  //     UserRequestedTranslation,
-  //     itemId,
-  //     itemPath,
-  //   } = request;
-  //   const results = [];
-  //   for (const field of fields) {
-  //     const translations: Record<string, string> = {};
+  async handleTranslation(
+    request: TranslateRequestDTO,
+  ): Promise<TranslateResponseDTO> {
+    const {
+      targetLanguages,
+      language,
+      fields,
+      UserRequestedTranslation,
+      itemId,
+      itemPath,
+    } = request;
+    const results = [];
+    for (const field of fields) {
+      const translations: Record<string, string> = {};
 
-  //     await Promise.all(
-  //       targetLanguages.map(async (targetLanguage) => {
-  //         const translated = await this.bedrockClient.translate(
-  //           field.texttotranslate,
-  //           targetLanguage,
-  //           language,
-  //         );
-  //         if (translated) {
-  //           translations[targetLanguage] = translated;
-  //         }
-  //       }),
-  //     );
+      await Promise.all(
+        targetLanguages.map(async (targetLanguage) => {
+          const translated = await this.bedrockClient.translate(
+            field.texttotranslate,
+            targetLanguage,
+            language,
+          );
+          if (translated) {
+            translations[targetLanguage] = translated;
+          }
+        }),
+      );
 
-  //     results.push({ metadata: fields[0].metadata, translations });
-  //   }
-  //   return {
-  //     itemId,
-  //     itemPath,
-  //     requestedBy: UserRequestedTranslation,
-  //     sourceLanguage: language,
-  //     targetLanguages,
-  //     results,
-  //     timestamp: new Date().toISOString(),
-  //   };
-  // }
+      results.push({ metadata: fields[0].metadata, translations });
+    }
+    return {
+      itemId,
+      itemPath,
+      requestedBy: UserRequestedTranslation,
+      sourceLanguage: language,
+      targetLanguages,
+      results,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  async handleTranslationBackoff(
+    request: TranslateRequestDTO,
+  ): Promise<TranslateResponseDTO> {
+    const {
+      targetLanguages,
+      language,
+      fields,
+      UserRequestedTranslation,
+      itemId,
+      itemPath,
+    } = request;
+    const results = [];
+    for (const field of fields) {
+      const translations: Record<string, string> = {};
+
+      await Promise.all(
+        targetLanguages.map(async (targetLanguage) => {
+          const translated = await this.bedrockClient.translateWithRetry(
+            field.texttotranslate,
+            targetLanguage,
+            language,
+          );
+          if (translated) {
+            translations[targetLanguage] = translated;
+          }
+        }),
+      );
+
+      results.push({ metadata: fields[0].metadata, translations });
+    }
+    return {
+      itemId,
+      itemPath,
+      requestedBy: UserRequestedTranslation,
+      sourceLanguage: language,
+      targetLanguages,
+      results,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
   async enqueueTranslation(request: TranslateRequestDTO): Promise<string> {
     const jobId = randomUUID();
