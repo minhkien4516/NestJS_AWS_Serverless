@@ -9,12 +9,12 @@ import { TranslateResponseDTO } from './dto/translate-response.dto';
 
 @Injectable()
 export class TranslateService {
+  private readonly logger = new Logger(TranslateService.name);
   constructor(
     @Inject('SQS_CLIENT') private readonly sqsClient: SQSClient,
     private readonly configService: ConfigService,
     private readonly bedrockClient: BedrockService,
     private readonly dynamoDB: DynamoService,
-    private readonly logger = new Logger(TranslateService.name),
   ) {}
 
   async handleTranslation(
