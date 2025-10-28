@@ -191,7 +191,7 @@ export class DynamoService {
     );
     await this.docClient.send(
       new PutItemCommand({
-        TableName: this.configService.get<string>('TRANSLATION_TABLE'),
+        TableName: this.configService.get<string>('TRANSLATION_TABLE') || 'Translations',
         Item: {
           jobId: { S: jobId },
           result: { S: JSON.stringify(payload) },

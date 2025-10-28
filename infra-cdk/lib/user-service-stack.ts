@@ -77,18 +77,24 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // worker lambda
-    const workerLambda = new lambda.Function(this, 'WorkerLambda', {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'dist/worker/handler.handler',
-      code: lambda.Code.fromAsset('../backend-app/dist'),
-      environment: {
-        TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
-        DYNAMODB_TABLE_NAME: translateTable.tableName,
-        BEDROCK_MODEL_ID:
-          'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
-      },
-      timeout: cdk.Duration.seconds(60),
-    });
+    const workerLambda = new lambda.Function(
+      this,
+      'TranslationWorkerFunction',
+      {
+        functionName: 'translation-worker-func',
+        runtime: lambda.Runtime.NODEJS_18_X,
+        handler: 'worker/handler.handler',
+        code: lambda.Code.fromAsset('../backend-app/dist'),
+        environment: {
+          TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
+          TRANSLATION_TABLE: translateTable.tableName,
+          BEDROCK_MODEL_ARN:
+            'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+        },
+        timeout: cdk.Duration.seconds(60),
+        memorySize: 512,
+      }
+    );
 
     workerLambda.addEventSource(
       new lambdaEventSources.SqsEventSource(translationQueue, {
