@@ -36,7 +36,8 @@ export const handler = async (
         }
         results.push({ metadata: field.metadata, translations });
       }
-
+      console.log('Successfully translated text: ', results);
+      console.log(`Start save job ${jobId} to table translation results`);
       await dynamo.saveResult(jobId, {
         jobId,
         results,

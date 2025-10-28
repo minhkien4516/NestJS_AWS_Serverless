@@ -79,7 +79,7 @@ export class UserServiceStack extends cdk.Stack {
     // worker lambda
     const workerLambda = new lambda.Function(this, 'WorkerLambda', {
       runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'worker/handler.handler',
+      handler: 'dist/worker/handler.handler',
       code: lambda.Code.fromAsset('../backend-app/dist'),
       environment: {
         TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
