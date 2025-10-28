@@ -42,11 +42,11 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // Worker Lambda Function
-    // const workerLambda = lambda.Function.fromFunctionArn(
-    //   this,
-    //   'UserServiceStack-WorkerLambdaBD11C0E2-urx32zfV0DRO',
-    //   'arn:aws:lambda:ap-southeast-1:438465128644:function:UserServiceStack-WorkerLambdaBD11C0E2-urx32zfV0DRO'
-    // );
+    const workerLambda = lambda.Function.fromFunctionArn(
+      this,
+      'UserServiceStack-WorkerLambdaBD11C0E2-lMOc19jAjPHX',
+      'arn:aws:lambda:ap-southeast-1:438465128644:function:UserServiceStack-WorkerLambdaBD11C0E2-lMOc19jAjPHX'
+    );
 
     // API Gateway
     const api = apigateway.RestApi.fromRestApiId(
@@ -77,35 +77,35 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // worker lambda
-    const workerLambda = new lambda.Function(
-      this,
-      'TranslationWorkerFunction',
-      {
-        functionName: 'UserServiceStack-WorkerLambdaBD11C0E2-lMOc19jAjPHX',
-        runtime: lambda.Runtime.NODEJS_18_X,
-        handler: 'worker/handler.handler',
-        code: lambda.Code.fromAsset('../backend-app/dist'),
-        environment: {
-          TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
-          TRANSLATION_TABLE: translateTable.tableName,
-          BEDROCK_MODEL_ARN:
-            'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
-        },
-        timeout: cdk.Duration.seconds(60),
-        memorySize: 512,
-      }
-    );
+    // const workerLambda = new lambda.Function(
+    //   this,
+    //   'TranslationWorkerFunction',
+    //   {
+    //     functionName: 'UserServiceStack-WorkerLambdaBD11C0E2-lMOc19jAjPHX',
+    //     runtime: lambda.Runtime.NODEJS_18_X,
+    //     handler: 'worker/handler.handler',
+    //     code: lambda.Code.fromAsset('../backend-app/dist'),
+    //     environment: {
+    //       TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
+    //       TRANSLATION_TABLE: translateTable.tableName,
+    //       BEDROCK_MODEL_ARN:
+    //         'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+    //     },
+    //     timeout: cdk.Duration.seconds(60),
+    //     memorySize: 512,
+    //   }
+    // );
 
-    workerLambda.addEventSource(
-      new lambdaEventSources.SqsEventSource(translationQueue, {
-        batchSize: 1,
-        maxConcurrency: 3,
-        reportBatchItemFailures: true,
-      })
-    );
+    // workerLambda.addEventSource(
+    //   new lambdaEventSources.SqsEventSource(translationQueue, {
+    //     batchSize: 1,
+    //     maxConcurrency: 3,
+    //     reportBatchItemFailures: true,
+    //   })
+    // );
 
-    translationQueue.grantConsumeMessages(workerLambda);
-    translateTable.grantReadWriteData(workerLambda);
+    // translationQueue.grantConsumeMessages(workerLambda);
+    // translateTable.grantReadWriteData(workerLambda);
 
     // Outputs
     new cdk.CfnOutput(this, 'LambdaFunctionArn', {
