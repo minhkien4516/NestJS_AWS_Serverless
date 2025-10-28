@@ -81,7 +81,7 @@ export class UserServiceStack extends cdk.Stack {
       this,
       'TranslationWorkerFunction',
       {
-        functionName: 'translation-worker-func',
+        functionName: 'UserServiceStack-WorkerLambdaBD11C0E2-lMOc19jAjPHX',
         runtime: lambda.Runtime.NODEJS_18_X,
         handler: 'worker/handler.handler',
         code: lambda.Code.fromAsset('../backend-app/dist'),

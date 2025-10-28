@@ -14,8 +14,8 @@ jobs:
       AWS_REGION: ap-southeast-1
       LAMBDA_S3_BUCKET: lambda-function-bucket-kienmai
       LAMBDA_FUNCTION_NAME: backend-app-func
-      LAMBDA_FUNCTION_NAME_WORKER: translation-worker-func
-      ZIP_FILE_NAME: function.zip
+      LAMBDA_FUNCTION_NAME_WORKER: UserServiceStack-WorkerLambdaBD11C0E2-lMOc19jAjPHX
+      ZIP_FILE_NAME: functions.zip
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
