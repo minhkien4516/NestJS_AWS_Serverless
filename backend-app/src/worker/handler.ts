@@ -1,4 +1,5 @@
-import { SQSEvent } from 'aws-lambda';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Context, SQSEvent } from 'aws-lambda';
 import { DynamoService } from '../database/dynamo.service';
 import { BedrockService } from '../bedrock/bedrock.service';
 import { ConfigService } from '@nestjs/config';
@@ -9,7 +10,11 @@ const bedrock = new BedrockService(configService);
 const dynamo = new DynamoService(configService);
 const logger = new Logger('TranslationWorker');
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (
+  event: SQSEvent,
+  context: Context,
+): Promise<void> => {
+  console.log('Received SQS event:', JSON.stringify(event));
   logger.warn(`We have been received ${event.Records.length} records from SQS`);
   for (const record of event.Records) {
     try {

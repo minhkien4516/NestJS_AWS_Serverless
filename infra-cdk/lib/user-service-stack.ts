@@ -42,11 +42,11 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // Worker Lambda Function
-    // const workerLambda = lambda.Function.fromFunctionArn(
-    //   this,
-    //   'TranslationWorkerLambda',
-    //   'arn:aws:lambda:ap-southeast-1:438465128644:function:UserServiceStack-WorkerLambdaBD11C0E2-6CEhvO6x65eO'
-    // );
+    const workerLambda = lambda.Function.fromFunctionArn(
+      this,
+      'UserServiceStack-WorkerLambdaBD11C0E2-urx32zfV0DRO',
+      'arn:aws:lambda:ap-southeast-1:438465128644:function:UserServiceStack-WorkerLambdaBD11C0E2-urx32zfV0DRO'
+    );
 
     // API Gateway
     const api = apigateway.RestApi.fromRestApiId(
@@ -77,26 +77,40 @@ export class UserServiceStack extends cdk.Stack {
     );
 
     // worker lambda
-    const workerLambda = new lambda.Function(this, 'WorkerLambda', {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'backend-app/src/worker/handler.handler',
-      code: lambda.Code.fromAsset('../backend-app/dist'),
-      environment: {
-        TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
-        DYNAMODB_TABLE_NAME: translateTable.tableName,
-      },
-      timeout: cdk.Duration.seconds(60),
-    });
+    // const workerLambda = new lambda.Function(this, 'WorkerLambda', {
+    //   runtime: lambda.Runtime.NODEJS_20_X,
+    //   handler: 'backend-app/src/worker/handler.handler',
+    //   code: lambda.Code.fromAsset('../backend-app/dist'),
+    //   environment: {
+    //     TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
+    //     DYNAMODB_TABLE_NAME: translateTable.tableName,
+    //   },
+    //   timeout: cdk.Duration.seconds(60),
+    // });
 
-    workerLambda.addEventSource(
-      new lambdaEventSources.SqsEventSource(translationQueue, {
-        batchSize: 5,
-        enabled: true,
-      })
-    );
+    // const workerLambda = new lambda.Function(this, 'WorkerLambda', {
+    //   runtime: lambda.Runtime.NODEJS_20_X,
+    //   handler: 'worker/handler.handler',
+    //   code: lambda.Code.fromAsset('../backend-app/dist'),
+    //   timeout: cdk.Duration.seconds(60),
+    //   environment: {
+    //     DYNAMODB_TABLE_NAME: translateTable.tableName,
+    //     TRANSLATION_QUEUE_URL: translationQueue.queueUrl,
+    //     BEDROCK_MODEL_ID:
+    //       'arn:aws:bedrock:ap-southeast-1:438465128644:inference-profile/apac.anthropic.claude-sonnet-4-20250514-v1:0',
+    //   },
+    // });
 
-    translationQueue.grantConsumeMessages(workerLambda);
-    translateTable.grantReadWriteData(workerLambda);
+    // workerLambda.addEventSource(
+    //   new lambdaEventSources.SqsEventSource(translationQueue, {
+    // batchSize: 1,               // Process one message at a time
+    // maxConcurrency: 3,          // (Optional) Cap concurrent Lambdas
+    // reportBatchItemFailures: true,
+    //   })
+    // );
+
+    // translationQueue.grantConsumeMessages(workerLambda);
+    // translateTable.grantReadWriteData(workerLambda);
 
     // Outputs
     new cdk.CfnOutput(this, 'LambdaFunctionArn', {

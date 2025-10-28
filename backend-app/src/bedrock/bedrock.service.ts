@@ -50,17 +50,39 @@ export class BedrockService {
       }),
     });
 
-    const response = await this.client.send(command);
-    const decoded = new TextDecoder().decode(response.body);
-    const parsed = JSON.parse(decoded);
+    let attempt = 0;
+    const maxAttempts = 5;
+    const baseDelay = 1000;
 
-    const translated =
-      parsed?.content?.[0]?.text ||
-      parsed?.output_text ||
-      parsed?.outputText ||
-      '';
-    this.logger.log(`Translated to ${targetLanguage}`);
-    return String(translated).trim();
+    while (attempt < maxAttempts) {
+      try {
+        const response = await this.client.send(command);
+        const decoded = new TextDecoder().decode(response.body);
+        const parsed = JSON.parse(decoded);
+        const translated =
+          parsed?.content?.[0]?.text ||
+          parsed?.output_text ||
+          parsed?.outputText ||
+          '';
+        this.logger.log(`Translated to ${targetLanguage}`);
+        return String(translated).trim();
+      } catch (error) {
+        if (
+          error.name === 'ThrottlingException' ||
+          error.$metadata?.httpStatusCode === 429
+        ) {
+          attempt++;
+          const delay = baseDelay * Math.pow(2, attempt);
+          this.logger.warn(
+            `Throttled on attempt ${attempt}, retrying in ${delay} ms...`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw new Error('Translation failed after multiple retries.');
   }
 
   async translateWithRetry(

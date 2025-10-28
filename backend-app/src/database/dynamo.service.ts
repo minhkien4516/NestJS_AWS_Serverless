@@ -186,6 +186,9 @@ export class DynamoService {
 
   // Translation
   async saveResult(jobId: string, payload: any) {
+    this.logger.warn(
+      `We have been received ${jobId} from request to saveResult with ${JSON.stringify(payload)}`,
+    );
     await this.docClient.send(
       new PutItemCommand({
         TableName: this.configService.get<string>('TRANSLATION_TABLE'),
